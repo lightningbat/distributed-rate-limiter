@@ -1,0 +1,40 @@
+{
+  "name": "rate-limit",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+     ".": {
+       "import": {
+         "types": "./dist/index.d.ts",
+         "default": "./dist/index.js"
+       },
+       "require": {
+         "types": "./dist/index.d.cts",
+         "default": "./dist/index.cjs"
+        }
+    }
+  },
+  "files": [
+    "dist/",
+    "tsconfig.json",
+    "package.json"
+  ],
+  "scripts": {
+	"type-check": "tsc --noEmit",
+    "build": "npm run type-check && tsup src/index.ts --format cjs,esm --dts"
+
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.0",
+    "redis": "^5.11.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "redis": "^5.11.0"
+  }
+}
