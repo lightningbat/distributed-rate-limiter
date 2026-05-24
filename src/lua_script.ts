@@ -35,13 +35,13 @@ end
 
 -- Save updated state back to Redis
 redis.call("HMSET", key,
-    "tokens", tokens,
-    "last", last
+    "tokens", tostring(tokens),
+    "last", tostring(last)
 )
 
 redis.call("PEXPIRE", key, ttl)
 
 -- Return an array: [allowed, remaining]
 -- allowed will be 1 (true) or 0 (false)
-return { allowed, tokens }
+return { allowed, tostring(tokens) }
 `

@@ -32,12 +32,18 @@ export function rateLimiter(store: RedisStore, options: RateLimitOptions): Reque
 
 	return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
 		const key = keyGenerator(req);
+		const reqTimeStamp = Date.now()
 
 		try {
-			const result = await store.increment(key, storeConfig);
+			const result = await store.increment(key, storeConfig, reqTimeStamp);
 
-			res.setHeader('X-RateLimit-Limit', options.limit);
+			const activeLimit = result.executionMode === 'IN_MEMORY'
+				? options.fallbackLimit
+				: options.limit;
+
+			res.setHeader('X-RateLimit-Limit', activeLimit!);
 			res.setHeader('X-RateLimit-Remaining', result.remaining);
+			res.setHeader('X-RateLimit-Mode', result.executionMode);
 
 			if (!result.allowed) {
 				return handler(req, res, next);

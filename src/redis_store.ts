@@ -117,7 +117,7 @@ export class RedisStore extends EventEmitter {
 		});
 	}
 
-	public async increment(key: string, config: IncrementConfig, isRetry = false): Promise<RateLimitResult> {
+	public async increment(key: string, config: IncrementConfig, reqTimeStamp: number, isRetry = false): Promise<RateLimitResult> {
 		const now = Date.now();
 
 		// LAYER 1: Hard Connection Check (Instant 0ms Fast-Fail Bypass)
@@ -138,7 +138,7 @@ export class RedisStore extends EventEmitter {
 		// LAYER 3: The Stopwatch Race against Hidden Congestion
 		try {
 			const result = await Promise.race([
-				this._executeRedis(key, config.limit, config.windowMs, config.redisTtl!),
+				this._executeRedis(key, config.limit, config.windowMs, config.redisTtl!, reqTimeStamp),
 				this._createTimeout(this.timeoutMs)
 			]);
 
@@ -163,7 +163,7 @@ export class RedisStore extends EventEmitter {
 					this._initializeScript();
 					await this.sha;
 
-					return await this.increment(key, config, true);
+					return await this.increment(key, config, reqTimeStamp, true);
 				}
 			}
 			this._handleFailure(err as Error);
@@ -233,20 +233,24 @@ export class RedisStore extends EventEmitter {
 		);
 	}
 
-	private async _executeRedis(key: string, limit: number, windowMs: number, ttl: number): Promise<RateLimitResult> {
+	private async _executeRedis(key: string, limit: number, windowMs: number, ttl: number, reqTimeStamp: number): Promise<RateLimitResult> {
 		const resolvedSha = await this.sha;
 
 		if (!resolvedSha) {
 			throw new Error('NOSCRIPT: Script token allocation empty');
 		}
+
+		const refil_rate = limit / windowMs
+
 		const rawResult = await this.client.evalSha(resolvedSha, {
 			keys: [key],
-			arguments: [String(limit), String(windowMs), String(ttl)]
+			arguments: [String(limit), String(refil_rate), String(reqTimeStamp), String(ttl)]
 		}) as [number, number];
 
 		return {
 			allowed: rawResult[0] === 1,
-			remaining: Math.floor(rawResult[1])
+			remaining: Math.floor(rawResult[1]),
+			executionMode: 'REDIS'
 		};
 	}
 
@@ -277,10 +281,14 @@ export class RedisStore extends EventEmitter {
 		if (bucket.tokens >= 1) {
 			bucket.tokens -= 1;
 			this.localFallbackCache.set(key, bucket);
-			return { allowed: true, remaining: Math.floor(bucket.tokens) };
+			return {
+				allowed: true,
+				remaining: Math.floor(bucket.tokens),
+				executionMode: 'IN_MEMORY'
+			};
 		}
 
 		this.localFallbackCache.set(key, bucket);
-		return { allowed: false, remaining: 0 };
+		return { allowed: false, remaining: 0, executionMode: 'IN_MEMORY' };
 	}
 }

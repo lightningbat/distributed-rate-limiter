@@ -117,6 +117,11 @@ export interface RateLimitResult {
 
 	/** The remaining integer value of whole tokens current to this client identifier inside this active scope window. */
 	remaining: number;
+	/** 
+	* Explicitly details which processing engine computed this specific transaction quota.
+	* Helps upstream middlewares output mathematically aligned headers.
+	*/
+	executionMode: 'REDIS' | 'IN_MEMORY';
 }
 
 /**
