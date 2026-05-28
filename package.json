@@ -1,6 +1,7 @@
 {
-  "name": "distributed-rate-limit",
-  "version": "0.0.0",
+  "name": "resilient-rate-limiter",
+  "version": "1.0.0",
+  "description": "Redis-backed Express middleware with automatic degraded-mode fallback handling.",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
