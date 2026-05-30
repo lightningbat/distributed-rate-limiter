@@ -1,6 +1,6 @@
 {
   "name": "resilient-rate-limiter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Redis-backed Express middleware with automatic degraded-mode fallback handling.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -38,7 +38,7 @@
   },
   "peerDependencies": {
     "redis": "^5.11.0",
-	"lru-cache": "^11.5.0",
+    "lru-cache": "^11.5.0",
     "ip-address": "^10.2.0"
   }
 }
